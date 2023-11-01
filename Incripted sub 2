@@ -1,0 +1,27 @@
+#include "ros/ros.h"
+#include "std_msgs/String.h"
+#include "cryptography/fernet.h"  // You'll need to define this message type
+
+void encryptedDataCallback(const std_msgs::String::ConstPtr &msg)
+{
+  // Retrieve the encryption key (should match the key used by the drone)
+  std::string encryption_key = "YOUR_ENCRYPTION_KEY";  // Replace with the same key used by the drone
+
+  // Decrypt the received data
+  cryptography::Fernet decipher_suite(encryption_key);
+  std::string decrypted_data = decipher_suite.decrypt(msg->data);
+
+  ROS_INFO("Received and decrypted data: %s", decrypted_data.c_str());
+}
+
+int main(int argc, char **argv)
+{
+  ros::init(argc, argv, "ros_system_subscriber");
+  ros::NodeHandle node_handle;
+
+  ros::Subscriber sub = node_handle.subscribe("encrypted_data", 10, encryptedDataCallback);
+
+  ros::spin();
+
+  return 0;
+}

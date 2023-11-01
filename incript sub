@@ -1,0 +1,42 @@
+#include <ros/ros.h>
+#include <std_msgs/String.h>
+#include <openssl/aes.h> // You may need to install the OpenSSL library
+
+// Function to decrypt data using AES decryption
+void decryptData(const std_msgs::String& encryptedMsg, const unsigned char* key) {
+    size_t dataLength = encryptedMsg.data.size();
+    AES_KEY aesKey;
+    AES_set_decrypt_key(key, 128, &aesKey);
+
+    unsigned char decryptedData[dataLength];
+    AES_decrypt(reinterpret_cast<const unsigned char*>(encryptedMsg.data.c_str()), decryptedData, &aesKey);
+
+    // Handle the decrypted data
+    std::string decryptedStr(reinterpret_cast<const char*>(decryptedData), dataLength);
+    
+    // Your code to process the decrypted data
+    // ...
+}
+
+void encryptedDataCallback(const std_msgs::String::ConstPtr& msg) {
+    // Encryption key for securing communication (must match the publisher's key)
+    unsigned char encryptionKey[16] = "YOUR_ENCRYPTION_KEY";
+
+    // Decrypt the received data
+    decryptData(*msg, encryptionKey);
+}
+
+int main(int argc, char** argv) {
+    ros::init(argc, argv, "secure_subscriber_node");
+    ros::NodeHandle nh;
+
+    // Subscribe to the secure data topic
+    ros::Subscriber encryptedDataSub = nh.subscribe("secure_data_topic", 10, encryptedDataCallback);
+
+    // Your subscriber logic
+    // ...
+
+    ros::spin();
+
+    return 0;
+}

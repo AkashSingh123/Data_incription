@@ -1,0 +1,77 @@
+import cv2
+import numpy as np
+
+# Load YOLO model and classes
+net = cv2.dnn.readNet("yolov3.weights", "yolov3.cfg")  # You need to provide the correct weights and configuration files
+classes = []
+
+with open("coco.names", "r") as f:  # Load the COCO dataset class names
+    classes = f.read().strip().split("\n")
+
+# Load image or video
+image = cv2.imread("image.jpg")  # Load your image here
+
+# Get the image dimensions
+height, width, _ = image.shape
+
+# Preprocess the image for YOLO
+blob = cv2.dnn.blobFromImage(image, 1/255.0, (416, 416), swapRB=True, crop=False)
+
+# Set input to the network
+net.setInput(blob)
+
+# Get the output layer names
+layer_names = net.getUnconnectedOutLayersNames()
+
+# Run forward pass to get the output layer
+outs = net.forward(layer_names)
+
+# Lists to store detected objects
+class_ids = []
+confidences = []
+boxes = []
+
+# Threshold for object detection confidence
+confidence_threshold = 0.5
+
+# Process the output
+for out in outs:
+    for detection in out:
+        scores = detection[5:]
+        class_id = np.argmax(scores)
+        confidence = scores[class_id]
+
+        if confidence > confidence_threshold:
+            # Object detected
+            center_x = int(detection[0] * width)
+            center_y = int(detection[1] * height)
+            w = int(detection[2] * width)
+            h = int(detection[3] * height)
+
+            # Rectangle coordinates
+            x = int(center_x - w / 2)
+            y = int(center_y - h / 2)
+
+            class_ids.append(class_id)
+            confidences.append(float(confidence))
+            boxes.append([x, y, w, h])
+
+# Non-maximum suppression to eliminate overlapping boxes
+nms_threshold = 0.4
+indices = cv2.dnn.NMSBoxes(boxes, confidences, confidence_threshold, nms_threshold)
+
+# Draw bounding boxes and labels on the image
+for i in indices:
+    i = i[0]
+    box = boxes[i]
+    x, y, w, h = box
+    label = str(classes[class_ids[i]])
+    confidence = confidences[i]
+
+    cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
+    cv2.putText(image, f"{label} {confidence:.2f}", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+# Display the resulting image
+cv2.imshow("Object Detection", image)
+cv2.waitKey(0)
+cv2.destroyAllWindows()

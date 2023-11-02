@@ -1,0 +1,43 @@
+#!/usr/bin/env python
+
+import rospy
+from std_msgs.msg import String
+from Crypto.Cipher import AES
+from Crypto.Random import get_random_bytes
+
+# Function to encrypt data using AES encryption
+def aes_encrypt(data, key):
+    cipher = AES.new(key, AES.MODE_ECB)
+    encrypted_data = cipher.encrypt(data)
+    return encrypted_data
+
+def main():
+    rospy.init_node('secure_publisher_node', anonymous=True)
+
+    # Encryption key for securing communication (must match the subscriber's key)
+    encryption_key = b'YOUR_ENCRYPTION_KEY'
+
+    # Your code to prepare the data to be sent securely
+    data_to_send = "This is a secret message."
+
+    # Encrypt the data using AES
+    encrypted_data = aes_encrypt(data_to_send, encryption_key)
+
+    # Create a publisher for the secure data topic
+    encrypted_data_pub = rospy.Publisher("secure_data_topic", String, queue_size=10)
+
+    # Construct a std_msgs/String message with the encrypted data
+    encrypted_msg = String()
+    encrypted_msg.data = encrypted_data
+
+    # Publish the encrypted data
+    rate = rospy.Rate(10)  # 10 Hz
+    while not rospy.is_shutdown():
+        encrypted_data_pub.publish(encrypted_msg)
+        rate.sleep()
+
+if __name__ == '__main__':
+    try:
+        main()
+    except rospy.ROSInterruptException:
+        pass

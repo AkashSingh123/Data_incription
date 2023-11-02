@@ -1,0 +1,36 @@
+#!/usr/bin/env python
+
+import rospy
+from std_msgs.msg import String
+from Crypto.Cipher import AES
+
+# Function to decrypt data using AES encryption
+def decrypt_data(encrypted_data, key):
+    cipher = AES.new(key, AES.MODE_ECB)
+    decrypted_data = cipher.decrypt(encrypted_data)
+    return decrypted_data
+
+def encrypted_data_callback(msg):
+    # Encryption key for securing communication (must match the publisher's key)
+    encryption_key = b'YOUR_ENCRYPTION_KEY'
+
+    # Decrypt the received data
+    decrypted_data = decrypt_data(msg.data, encryption_key)
+
+    # Your code to process the decrypted data
+    rospy.loginfo("Decrypted data: %s", decrypted_data)
+    # ...
+
+def main():
+    rospy.init_node('secure_subscriber_node', anonymous=True)
+
+    # Subscribe to the secure data topic
+    rospy.Subscriber("secure_data_topic", String, encrypted_data_callback)
+
+    # Your subscriber logic
+    # ...
+
+    rospy.spin()
+
+if __name__ == '__main__':
+    main()
